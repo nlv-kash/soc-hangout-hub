@@ -21,14 +21,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "yarn"
+          cache: "npm"
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Lint (if available)
-        run: yarn lint
-        continue-on-error: true
+        run: npm run lint --if-present
 
       - name: Build
-        run: yarn build
+        run: npm run build
