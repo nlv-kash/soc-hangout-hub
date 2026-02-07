@@ -12,7 +12,10 @@ jobs:
   trigger-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Confirm dispatch works
-        run: |
-          echo "Workflow dispatched successfully"
-          echo "Reason: ${{ inputs.reason }}"
+     - name: Dispatch confirmation
+  env:
+    REASON: ${{ inputs.reason }}
+  run: |
+    echo "Workflow dispatched successfully"
+    printf 'Reason: %s\n' "$REASON"
+
