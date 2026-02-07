@@ -1,21 +1,62 @@
-name: Abacus Trigger (PoC)
+name: Abacus Trigger
 
 on:
   workflow_dispatch:
     inputs:
       reason:
-        description: "Why was this run triggered?"
+        description: "Why this run was triggered"
         required: false
-        default: "Triggered from Abacus via MCP"
+        default: "manual test"
+      ref:
+        description: "Git ref to run on (branch/tag). Default: main"
+        required: false
+        default: "main"
+
+  repository_dispatch:
+    types: [abacus_deploy]
+
+permissions:
+  contents: read
+  actions: write
 
 jobs:
-  trigger-test:
+  abacus_trigger:
+    name: Receive trigger and fan-out
     runs-on: ubuntu-latest
-    steps:
-     - name: Dispatch confirmation
-  env:
-    REASON: ${{ inputs.reason }}
-  run: |
-    echo "Workflow dispatched successfully"
-    printf 'Reason: %s\n' "$REASON"
 
+    steps:
+      - name: Show trigger context
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+          REASON: ${{ github.event.inputs.reason || github.event.client_payload.reason || 'n/a' }}
+          REF: ${{ github.event.inputs.ref || github.event.client_payload.ref || github.ref_name }}
+        run: |
+          echo "✅ Abacus Trigger received"
+          echo "Event: $EVENT_NAME"
+          echo "Actor: $ACTOR"
+          echo "Reason: $REASON"
+          echo "Ref: $REF"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.event.client_payload.ref || 'main' }}
+
+      # Optional: Kick off your existing CI workflow (ci.yml)
+      # This is useful if Abacus triggers *this* workflow, and this workflow triggers *CI*.
+      - name: Dispatch CI workflow (ci.yml)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          REF: ${{ github.event.inputs.ref || github.event.client_payload.ref || 'main' }}
+          REASON: ${{ github.event.inputs.reason || github.event.client_payload.reason || 'abacus_deploy' }}
+        run: |
+          echo "➡️ Dispatching ci.yml on ref=$REF"
+          curl -sS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$OWNER/$REPO/actions/workflows/ci.yml/dispatches" \
+            -d "{\"ref\":\"$REF\",\"inputs\":{\"reason\":\"$REASON\"}}"
+          echo "✅ CI dispatch request sent"
