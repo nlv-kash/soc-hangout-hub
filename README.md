@@ -6,4 +6,4 @@
 
 ✅ SAST (semgrep) passing
 
-⚠️ Branch ruleset enforcement requires org/team (not enforced here)
+✅ Branch ruleset enforcement requires org/team.
