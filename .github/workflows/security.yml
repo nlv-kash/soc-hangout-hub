@@ -20,7 +20,7 @@ jobs:
       - name: Run gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
-          GITLEAKS_LICENSE: ""  # keep empty (OSS mode)
+          GITLEAKS_LICENSE: ""  # keep empty
 
   semgrep:
     name: SAST (Semgrep)
